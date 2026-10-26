@@ -1,0 +1,9 @@
+DEALZONE - WINDOWS CMD INSTRUCTIONS
+1. Extract the ZIP to your Projects folder.
+2. Open CMD in the extracted DealZone-Final folder.
+3. Run: cd backend && npm install && start "DealZone Backend" cmd /k "npm start" && cd ..\frontend && npm install && npm start
+4. Website: http://localhost:4200
+5. API: http://localhost:3000/api/products
+To change products, edit backend/data/products.json then refresh the website.
+Requires Node.js installed. Angular CLI is included locally via npm install.
+This is a demo: checkout does not charge or save orders.

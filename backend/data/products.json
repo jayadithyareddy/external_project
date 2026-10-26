@@ -1,0 +1,10 @@
+[
+{"id":1,"name":"Wireless Headphones","category":"Electronics","price":1299,"original":2999,"emoji":"🎧","color":"#e4e7ff"},
+{"id":2,"name":"Smart Watch","category":"Electronics","price":1999,"original":4999,"emoji":"⌚","color":"#fce7ef"},
+{"id":3,"name":"Running Sneakers","category":"Fashion","price":1499,"original":3499,"emoji":"👟","color":"#dff7ed"},
+{"id":4,"name":"Travel Backpack","category":"Fashion","price":899,"original":2199,"emoji":"🎒","color":"#fff0d8"},
+{"id":5,"name":"Coffee Maker","category":"Home","price":2499,"original":5999,"emoji":"☕","color":"#f3e8ff"},
+{"id":6,"name":"Bluetooth Speaker","category":"Electronics","price":999,"original":2499,"emoji":"🔊","color":"#e1f5fe"},
+{"id":7,"name":"Sunglasses","category":"Fashion","price":499,"original":1499,"emoji":"🕶️","color":"#fef3c7"},
+{"id":8,"name":"Desk Lamp","category":"Home","price":799,"original":1999,"emoji":"💡","color":"#ede9fe"}
+]
