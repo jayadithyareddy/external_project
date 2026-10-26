@@ -1,209 +1,192 @@
-/*!
- * destroy
- * Copyright(c) 2014 Jonathan Ong
- * Copyright(c) 2015-2022 Douglas Christopher Wilson
- * MIT Licensed
- */
+'use strict';
 
-'use strict'
+var test = require('tape');
+var v = require('es-value-fixtures');
+var forEach = require('for-each');
+var inspect = require('object-inspect');
 
-/**
- * Module dependencies.
- * @private
- */
+var abs = require('../abs');
+var floor = require('../floor');
+var isFinite = require('../isFinite');
+var isInteger = require('../isInteger');
+var isNaN = require('../isNaN');
+var isNegativeZero = require('../isNegativeZero');
+var max = require('../max');
+var min = require('../min');
+var mod = require('../mod');
+var pow = require('../pow');
+var round = require('../round');
+var sign = require('../sign');
 
-var EventEmitter = require('events').EventEmitter
-var ReadStream = require('fs').ReadStream
-var Stream = require('stream')
-var Zlib = require('zlib')
+var maxArrayLength = require('../constants/maxArrayLength');
+var maxSafeInteger = require('../constants/maxSafeInteger');
+var maxValue = require('../constants/maxValue');
 
-/**
- * Module exports.
- * @public
- */
+test('abs', function (t) {
+	t.equal(abs(-1), 1, 'abs(-1) === 1');
+	t.equal(abs(+1), 1, 'abs(+1) === 1');
+	t.equal(abs(+0), +0, 'abs(+0) === +0');
+	t.equal(abs(-0), +0, 'abs(-0) === +0');
 
-module.exports = destroy
+	t.end();
+});
 
-/**
- * Destroy the given stream, and optionally suppress any future `error` events.
- *
- * @param {object} stream
- * @param {boolean} suppress
- * @public
- */
+test('floor', function (t) {
+	t.equal(floor(-1.1), -2, 'floor(-1.1) === -2');
+	t.equal(floor(+1.1), 1, 'floor(+1.1) === 1');
+	t.equal(floor(+0), +0, 'floor(+0) === +0');
+	t.equal(floor(-0), -0, 'floor(-0) === -0');
+	t.equal(floor(-Infinity), -Infinity, 'floor(-Infinity) === -Infinity');
+	t.equal(floor(Number(Infinity)), Number(Infinity), 'floor(+Infinity) === +Infinity');
+	t.equal(floor(NaN), NaN, 'floor(NaN) === NaN');
+	t.equal(floor(0), +0, 'floor(0) === +0');
+	t.equal(floor(-0), -0, 'floor(-0) === -0');
+	t.equal(floor(1), 1, 'floor(1) === 1');
+	t.equal(floor(-1), -1, 'floor(-1) === -1');
+	t.equal(floor(1.1), 1, 'floor(1.1) === 1');
+	t.equal(floor(-1.1), -2, 'floor(-1.1) === -2');
+	t.equal(floor(maxValue), maxValue, 'floor(maxValue) === maxValue');
+	t.equal(floor(maxSafeInteger), maxSafeInteger, 'floor(maxSafeInteger) === maxSafeInteger');
 
-function destroy (stream, suppress) {
-  if (isFsReadStream(stream)) {
-    destroyReadStream(stream)
-  } else if (isZlibStream(stream)) {
-    destroyZlibStream(stream)
-  } else if (hasDestroy(stream)) {
-    stream.destroy()
-  }
+	t.end();
+});
 
-  if (isEventEmitter(stream) && suppress) {
-    stream.removeAllListeners('error')
-    stream.addListener('error', noop)
-  }
+test('isFinite', function (t) {
+	t.equal(isFinite(0), true, 'isFinite(+0) === true');
+	t.equal(isFinite(-0), true, 'isFinite(-0) === true');
+	t.equal(isFinite(1), true, 'isFinite(1) === true');
+	t.equal(isFinite(Infinity), false, 'isFinite(Infinity) === false');
+	t.equal(isFinite(-Infinity), false, 'isFinite(-Infinity) === false');
+	t.equal(isFinite(NaN), false, 'isFinite(NaN) === false');
 
-  return stream
-}
+	forEach(v.nonNumbers, function (nonNumber) {
+		t.equal(isFinite(nonNumber), false, 'isFinite(' + inspect(nonNumber) + ') === false');
+	});
 
-/**
- * Destroy a ReadStream.
- *
- * @param {object} stream
- * @private
- */
+	t.end();
+});
 
-function destroyReadStream (stream) {
-  stream.destroy()
+test('isInteger', function (t) {
+	forEach([].concat(
+		// @ts-expect-error TS sucks with concat
+		v.nonNumbers,
+		v.nonIntegerNumbers
+	), function (nonInteger) {
+		t.equal(isInteger(nonInteger), false, 'isInteger(' + inspect(nonInteger) + ') === false');
+	});
 
-  if (typeof stream.close === 'function') {
-    // node.js core bug work-around
-    stream.on('open', onOpenClose)
-  }
-}
+	t.end();
+});
 
-/**
- * Close a Zlib stream.
- *
- * Zlib streams below Node.js 4.5.5 have a buggy implementation
- * of .close() when zlib encountered an error.
- *
- * @param {object} stream
- * @private
- */
+test('isNaN', function (t) {
+	forEach([].concat(
+		// @ts-expect-error TS sucks with concat
+		v.nonNumbers,
+		v.infinities,
+		v.zeroes,
+		v.integerNumbers
+	), function (nonNaN) {
+		t.equal(isNaN(nonNaN), false, 'isNaN(' + inspect(nonNaN) + ') === false');
+	});
 
-function closeZlibStream (stream) {
-  if (stream._hadError === true) {
-    var prop = stream._binding === null
-      ? '_binding'
-      : '_handle'
+	t.equal(isNaN(NaN), true, 'isNaN(NaN) === true');
 
-    stream[prop] = {
-      close: function () { this[prop] = null }
-    }
-  }
+	t.end();
+});
 
-  stream.close()
-}
+test('isNegativeZero', function (t) {
+	t.equal(isNegativeZero(-0), true, 'isNegativeZero(-0) === true');
+	t.equal(isNegativeZero(+0), false, 'isNegativeZero(+0) === false');
+	t.equal(isNegativeZero(1), false, 'isNegativeZero(1) === false');
+	t.equal(isNegativeZero(-1), false, 'isNegativeZero(-1) === false');
+	t.equal(isNegativeZero(NaN), false, 'isNegativeZero(NaN) === false');
+	t.equal(isNegativeZero(Infinity), false, 'isNegativeZero(Infinity) === false');
+	t.equal(isNegativeZero(-Infinity), false, 'isNegativeZero(-Infinity) === false');
 
-/**
- * Destroy a Zlib stream.
- *
- * Zlib streams don't have a destroy function in Node.js 6. On top of that
- * simply calling destroy on a zlib stream in Node.js 8+ will result in a
- * memory leak. So until that is fixed, we need to call both close AND destroy.
- *
- * PR to fix memory leak: https://github.com/nodejs/node/pull/23734
- *
- * In Node.js 6+8, it's important that destroy is called before close as the
- * stream would otherwise emit the error 'zlib binding closed'.
- *
- * @param {object} stream
- * @private
- */
+	forEach(v.nonNumbers, function (nonNumber) {
+		t.equal(isNegativeZero(nonNumber), false, 'isNegativeZero(' + inspect(nonNumber) + ') === false');
+	});
 
-function destroyZlibStream (stream) {
-  if (typeof stream.destroy === 'function') {
-    // node.js core bug work-around
-    // istanbul ignore if: node.js 0.8
-    if (stream._binding) {
-      // node.js < 0.10.0
-      stream.destroy()
-      if (stream._processing) {
-        stream._needDrain = true
-        stream.once('drain', onDrainClearBinding)
-      } else {
-        stream._binding.clear()
-      }
-    } else if (stream._destroy && stream._destroy !== Stream.Transform.prototype._destroy) {
-      // node.js >= 12, ^11.1.0, ^10.15.1
-      stream.destroy()
-    } else if (stream._destroy && typeof stream.close === 'function') {
-      // node.js 7, 8
-      stream.destroyed = true
-      stream.close()
-    } else {
-      // fallback
-      // istanbul ignore next
-      stream.destroy()
-    }
-  } else if (typeof stream.close === 'function') {
-    // node.js < 8 fallback
-    closeZlibStream(stream)
-  }
-}
+	t.end();
+});
 
-/**
- * Determine if stream has destroy.
- * @private
- */
+test('max', function (t) {
+	t.equal(max(1, 2), 2, 'max(1, 2) === 2');
+	t.equal(max(1, 2, 3), 3, 'max(1, 2, 3) === 3');
+	t.equal(max(1, 2, 3, 4), 4, 'max(1, 2, 3, 4) === 4');
+	t.equal(max(1, 2, 3, 4, 5), 5, 'max(1, 2, 3, 4, 5) === 5');
+	t.equal(max(1, 2, 3, 4, 5, 6), 6, 'max(1, 2, 3, 4, 5, 6) === 6');
+	t.equal(max(1, 2, 3, 4, 5, 6, 7), 7, 'max(1, 2, 3, 4, 5, 6, 7) === 7');
 
-function hasDestroy (stream) {
-  return stream instanceof Stream &&
-    typeof stream.destroy === 'function'
-}
+	t.end();
+});
 
-/**
- * Determine if val is EventEmitter.
- * @private
- */
+test('min', function (t) {
+	t.equal(min(1, 2), 1, 'min(1, 2) === 1');
+	t.equal(min(1, 2, 3), 1, 'min(1, 2, 3) === 1');
+	t.equal(min(1, 2, 3, 4), 1, 'min(1, 2, 3, 4) === 1');
+	t.equal(min(1, 2, 3, 4, 5), 1, 'min(1, 2, 3, 4, 5) === 1');
+	t.equal(min(1, 2, 3, 4, 5, 6), 1, 'min(1, 2, 3, 4, 5, 6) === 1');
 
-function isEventEmitter (val) {
-  return val instanceof EventEmitter
-}
+	t.end();
+});
 
-/**
- * Determine if stream is fs.ReadStream stream.
- * @private
- */
+test('mod', function (t) {
+	t.equal(mod(1, 2), 1, 'mod(1, 2) === 1');
+	t.equal(mod(2, 2), 0, 'mod(2, 2) === 0');
+	t.equal(mod(3, 2), 1, 'mod(3, 2) === 1');
+	t.equal(mod(4, 2), 0, 'mod(4, 2) === 0');
+	t.equal(mod(5, 2), 1, 'mod(5, 2) === 1');
+	t.equal(mod(6, 2), 0, 'mod(6, 2) === 0');
+	t.equal(mod(7, 2), 1, 'mod(7, 2) === 1');
+	t.equal(mod(8, 2), 0, 'mod(8, 2) === 0');
+	t.equal(mod(9, 2), 1, 'mod(9, 2) === 1');
+	t.equal(mod(10, 2), 0, 'mod(10, 2) === 0');
+	t.equal(mod(11, 2), 1, 'mod(11, 2) === 1');
 
-function isFsReadStream (stream) {
-  return stream instanceof ReadStream
-}
+	t.end();
+});
 
-/**
- * Determine if stream is Zlib stream.
- * @private
- */
+test('pow', function (t) {
+	t.equal(pow(2, 2), 4, 'pow(2, 2) === 4');
+	t.equal(pow(2, 3), 8, 'pow(2, 3) === 8');
+	t.equal(pow(2, 4), 16, 'pow(2, 4) === 16');
+	t.equal(pow(2, 5), 32, 'pow(2, 5) === 32');
+	t.equal(pow(2, 6), 64, 'pow(2, 6) === 64');
+	t.equal(pow(2, 7), 128, 'pow(2, 7) === 128');
+	t.equal(pow(2, 8), 256, 'pow(2, 8) === 256');
+	t.equal(pow(2, 9), 512, 'pow(2, 9) === 512');
+	t.equal(pow(2, 10), 1024, 'pow(2, 10) === 1024');
 
-function isZlibStream (stream) {
-  return stream instanceof Zlib.Gzip ||
-    stream instanceof Zlib.Gunzip ||
-    stream instanceof Zlib.Deflate ||
-    stream instanceof Zlib.DeflateRaw ||
-    stream instanceof Zlib.Inflate ||
-    stream instanceof Zlib.InflateRaw ||
-    stream instanceof Zlib.Unzip
-}
+	t.end();
+});
 
-/**
- * No-op function.
- * @private
- */
+test('round', function (t) {
+	t.equal(round(1.1), 1, 'round(1.1) === 1');
+	t.equal(round(1.5), 2, 'round(1.5) === 2');
+	t.equal(round(1.9), 2, 'round(1.9) === 2');
 
-function noop () {}
+	t.end();
+});
 
-/**
- * On drain handler to clear binding.
- * @private
- */
+test('sign', function (t) {
+	t.equal(sign(-1), -1, 'sign(-1) === -1');
+	t.equal(sign(+1), +1, 'sign(+1) === +1');
+	t.equal(sign(+0), +0, 'sign(+0) === +0');
+	t.equal(sign(-0), -0, 'sign(-0) === -0');
+	t.equal(sign(NaN), NaN, 'sign(NaN) === NaN');
+	t.equal(sign(Infinity), +1, 'sign(Infinity) === +1');
+	t.equal(sign(-Infinity), -1, 'sign(-Infinity) === -1');
+	t.equal(sign(maxValue), +1, 'sign(maxValue) === +1');
+	t.equal(sign(maxSafeInteger), +1, 'sign(maxSafeInteger) === +1');
 
-// istanbul ignore next: node.js 0.8
-function onDrainClearBinding () {
-  this._binding.clear()
-}
+	t.end();
+});
 
-/**
- * On open handler to close stream.
- * @private
- */
+test('constants', function (t) {
+	t.equal(typeof maxArrayLength, 'number', 'typeof maxArrayLength === "number"');
+	t.equal(typeof maxSafeInteger, 'number', 'typeof maxSafeInteger === "number"');
+	t.equal(typeof maxValue, 'number', 'typeof maxValue === "number"');
 
-function onOpenClose () {
-  if (typeof this.fd === 'number') {
-    // actually close down the fd
-    this.close()
-  }
-}
+	t.end();
+});
